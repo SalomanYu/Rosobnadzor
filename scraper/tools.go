@@ -1,8 +1,10 @@
 package scraper
 
 import (
-	"time"
 	"Rosobnadzor/models"
+	"errors"
+	"time"
+
 	"github.com/gocolly/colly"
 )
 
@@ -19,10 +21,24 @@ func splitTableRow(row *colly.HTMLElement) (tableRow models.TableRow) {
 
 func getBody(url string) (body *colly.HTMLElement, err error) {
 	c := colly.NewCollector()
-	c.SetRequestTimeout(30 * time.Second)
+	badGateway := checkBadGateway(c)
+	if badGateway {
+		return nil, errors.New("Server error 502")
+	}
+	c.SetRequestTimeout(50 * time.Second)
 	c.OnHTML("body", func(h *colly.HTMLElement) {
 		body = h
 	})
 	err = c.Visit(url)
+	return
+}
+
+func checkBadGateway(c *colly.Collector) (badGateway bool) {
+	c.OnError(func(r *colly.Response, err error) {
+		if r.StatusCode >= 500{
+			badGateway = true
+			return
+		}
+	})
 	return
 }

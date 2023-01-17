@@ -1,6 +1,7 @@
 package scraper
 
 import (
+	"Rosobnadzor/logger"
 	"Rosobnadzor/models"
 	"Rosobnadzor/storage/excel"
 	"fmt"
@@ -33,17 +34,27 @@ func GetVuzesId(pageNum int) (ids []string) {
 func SaveVuzes(vuzIds []string) {
 	for _, id := range vuzIds{
 		vuz := GetVuz(id)
+		if vuz.FullName == "" {
+			continue 
+		}
 		excel.AddVuz(&vuz)
+		logger.Log.Printf("Saved vuz: %s\n", vuz.FullName)
 	}
 }
 
 func GetVuz(vuzId string) (vuz models.Vuz) {
-	body, err := getBody(fmt.Sprintf("%s/%s/", VuzDomain, vuzId))
+	url := fmt.Sprintf("%s/%s/", VuzDomain, vuzId)
+	body, err := getBody(url)
 	if err != nil{
+		logger.Log.Printf("Failed to connect to the page the first time: %s\nTimeout 10 seconds\n", url)
 		log.Println("error 10 seconds")
 		time.Sleep(10*time.Second)
-		body, err = getBody(fmt.Sprintf("%s/%s/", VuzDomain, vuzId))
+		body, err = getBody(url)
 		if err != nil{
+			logger.Log.Printf("Server error 502:%s\n", url)
+			if err.Error() == "Server error 502" {
+				return
+			}
 			log.Fatal(err)
 		}
 	}
