@@ -28,6 +28,7 @@ func GetVuzesId(pageNum int) (ids []string) {
 	body.ForEach("table.search-result.table.table-hover tbody tr", func(i int, h *colly.HTMLElement) {
 		ids = append(ids, h.Attr("data-guid"))
 	})
+	SaveVuzes(ids)
 	return
 }
 
@@ -35,10 +36,9 @@ func SaveVuzes(vuzIds []string) {
 	for _, id := range vuzIds{
 		vuz := GetVuz(id)
 		if vuz.FullName == "" {
-			continue 
+			logger.Log.Printf("Empty vuz:\n")
 		}
 		excel.AddVuz(&vuz)
-		logger.Log.Printf("Saved vuz: %s\n", vuz.FullName)
 	}
 }
 
